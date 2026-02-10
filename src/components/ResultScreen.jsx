@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useQuiz } from "../context/QuizContext";
 import ThemeToggle from "./ThemeToggle";
+import SoundToggle from "./SoundToggle";
 import Card from "./Card";
 
 export default function ResultScreen({ onPlayAgain }) {
@@ -23,7 +24,8 @@ export default function ResultScreen({ onPlayAgain }) {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
-      <header className="flex justify-end p-4 sm:p-5 absolute top-0 right-0">
+      <header className="flex justify-end items-center gap-3 sm:gap-4 p-4 sm:p-5 absolute top-0 right-0">
+        <SoundToggle />
         <ThemeToggle />
       </header>
 

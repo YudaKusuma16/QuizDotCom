@@ -1,9 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuiz } from "../context/QuizContext";
+import { useToast } from "../context/ToastContext";
 import ThemeToggle from "./ThemeToggle";
+import SoundToggle from "./SoundToggle";
 import Card from "./Card";
 import { shuffle } from "../utils/shuffle";
+import { soundManager } from "../utils/soundEffects";
 
 const FEEDBACK_DELAY_MS = 500;
 
@@ -16,12 +19,46 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
     setTimeRemaining,
     timeRemaining,
   } = useQuiz();
+  const { showToast } = useToast();
 
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [lastStreakMilestone, setLastStreakMilestone] = useState(0);
+  const [isShaking, setIsShaking] = useState(false);
 
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
+
+  const containerVariants = {
+    initial: { opacity: 0, y: 24 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+    exit: { opacity: 0, y: -24, transition: { duration: 0.25, ease: "easeIn" } },
+  };
+
+  const optionsContainerVariants = {
+    animate: {
+      transition: {
+        staggerChildren: 0.06,
+        delayChildren: 0.05,
+      },
+    },
+  };
+
+  const optionVariants = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.18, ease: "easeOut" } },
+  };
+
+  const shakeVariants = {
+    shake: {
+      x: [0, -10, 10, -8, 8, -5, 5, 0],
+      transition: {
+        duration: 0.5,
+        ease: "easeInOut",
+      },
+    },
+  };
 
   // Shuffle answer
   const options = useMemo(() => {
@@ -63,7 +100,27 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
     setIsLocked(true);
     setSelectedAnswer(answer);
 
+    soundManager.playPop();
+
     const isCorrect = answer === currentQuestion.correct_answer;
+
+    if (isCorrect) {
+      soundManager.playDing();
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+
+      // Show toast for streak milestones (3, 5, 7, 10...)
+      if (newStreak >= 3 && newStreak > lastStreakMilestone && (newStreak % 2 === 1 || newStreak % 5 === 0)) {
+        setLastStreakMilestone(newStreak);
+        showToast(`${newStreak} correct in a row! 🔥`, 'success');
+      }
+    } else {
+      soundManager.playBuzz();
+      setStreak(0);
+      setLastStreakMilestone(0);
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+    }
 
     setTimeout(() => {
       submitAnswer(answer);
@@ -114,6 +171,7 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
         >
           {formatTime(timeRemaining)}
         </span>
+        <SoundToggle />
         <ThemeToggle />
       </header>
 
@@ -138,23 +196,35 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              variants={containerVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               className="space-y-8"
             >
-              <h2 className="text-lg sm:text-xl font-medium text-zinc-900 dark:text-zinc-100 leading-relaxed transition-colors duration-300">
+              <motion.h2
+                className="text-lg sm:text-xl font-medium text-zinc-900 dark:text-zinc-100 leading-relaxed transition-colors duration-300"
+                animate={isShaking ? "shake" : ""}
+                variants={shakeVariants}
+              >
                 {currentQuestion.question}
-              </h2>
+              </motion.h2>
 
-              <div className="space-y-3">
+              <motion.div
+                className="space-y-3"
+                variants={optionsContainerVariants}
+                initial="initial"
+                animate="animate"
+              >
                 {options.map((option) => (
-                  <button
+                  <motion.button
                     key={option}
                     type="button"
                     onClick={() => handleSelectAnswer(option)}
                     disabled={isLocked}
+                    variants={optionVariants}
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
                     className={`
                       w-full text-left px-4 py-3 rounded-xl border-2
                       transition-all duration-200
@@ -163,9 +233,9 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
                     `}
                   >
                     {option}
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </motion.div>
             </motion.div>
           </AnimatePresence>
         </Card>

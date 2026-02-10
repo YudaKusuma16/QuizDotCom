@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuiz } from "../context/QuizContext";
 import { fetchQuizQuestions } from "../services/quizService";
 import ThemeToggle from "./ThemeToggle";
+import SoundToggle from "./SoundToggle";
 import Card from "./Card";
 
 export default function LoginPage() {
@@ -43,7 +44,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
-      <header className="flex justify-end p-4 absolute top-0 right-0">
+      <header className="flex justify-end items-center gap-3 sm:gap-4 p-4 sm:p-5 absolute top-0 right-0">
+        <SoundToggle />
         <ThemeToggle />
       </header>
 
@@ -83,7 +85,7 @@ export default function LoginPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder="Your Name"
                     autoComplete="name"
                     disabled={phase === "loading"}
                     className="
@@ -100,9 +102,50 @@ export default function LoginPage() {
                   />
                 </div>
                 {error && (
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    {error}
-                  </p>
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                          Failed to load questions
+                        </p>
+                        <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                          {error}
+                        </p>
+                        <button
+                          onClick={handleSubmit}
+                          className="mt-3 text-sm text-red-700 dark:text-red-300 font-medium hover:text-red-800 dark:hover:text-red-200 transition-colors flex items-center gap-1.5"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <button
                   type="submit"
