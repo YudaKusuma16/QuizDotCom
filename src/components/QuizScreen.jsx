@@ -5,6 +5,9 @@ import { useToast } from "../context/ToastContext";
 import ThemeToggle from "./ThemeToggle";
 import SoundToggle from "./SoundToggle";
 import Card from "./Card";
+import CircularTimer from "./CircularTimer";
+import StreakCounter from "./StreakCounter";
+import DynamicBackground from "./DynamicBackground";
 import { shuffle } from "../utils/shuffle";
 import { soundManager } from "../utils/soundEffects";
 
@@ -160,37 +163,50 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
   if (!currentQuestion) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors duration-300 ease-out">
-      <header className="flex justify-end items-center gap-3 sm:gap-4 p-4 sm:p-5 absolute top-0 right-0">
-        <span
-          className={`text-sm font-mono font-medium ${
-            timeRemaining <= 10
-              ? "text-red-600 dark:text-red-400 animate-pulse"
-              : "text-zinc-600 dark:text-zinc-400"
-          }`}
-        >
-          {formatTime(timeRemaining)}
-        </span>
-        <SoundToggle />
-        <ThemeToggle />
-      </header>
+    <DynamicBackground intensity={streak >= 3 ? "medium" : "calm"}>
+      <div className="min-h-screen transition-colors duration-300 ease-out">
+        <header className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 absolute top-0 left-0 right-0">
+          {/* Left side: Streak counter */}
+          <div className="flex items-center gap-3 flex-1">
+            <StreakCounter streak={streak} />
+          </div>
 
-      {/* Progress Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-200 dark:bg-zinc-800">
-        <motion.div
-          className="h-full bg-indigo-600 dark:bg-indigo-500"
-          initial={{ width: 0 }}
-          animate={{
-            width: `${((currentIndex + 1) / totalQuestions) * 100}%`,
-          }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-        />
-      </div>
+          {/* Center: Timer (absolute positioned to stay truly centered) */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center mt-5">
+            <CircularTimer
+              timeRemaining={timeRemaining}
+              totalTime={totalTime}
+              size={streak >= 3 ? 72 : 64}
+            />
+          </div>
 
-      <main className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 pt-8 sm:pt-10 pb-16 sm:pb-20">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
-          Question {currentIndex + 1} of {totalQuestions}
-        </p>
+          {/* Right side: Toggles */}
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-end">
+            <SoundToggle />
+            <ThemeToggle />
+          </div>
+        </header>
+
+        {/* Progress Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-200/60 dark:bg-zinc-800/60 backdrop-blur-sm">
+          <motion.div
+            className="h-full bg-gradient-to-r from-indigo-600 to-purple-600"
+            initial={{ width: 0 }}
+            animate={{
+              width: `${((currentIndex + 1) / totalQuestions) * 100}%`,
+            }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          />
+        </div>
+
+        <main className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 pt-16 sm:pt-20 pb-16 sm:pb-20">
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-sm text-zinc-500 dark:text-zinc-400 mb-2"
+          >
+            Question {currentIndex + 1} of {totalQuestions}
+          </motion.p>
 
         <Card className="w-full max-w-2xl p-6 sm:p-8 overflow-hidden">
           <AnimatePresence mode="wait">
@@ -240,6 +256,7 @@ export default function QuizScreen({ totalTime = 60, onQuizEnd }) {
           </AnimatePresence>
         </Card>
       </main>
-    </div>
+      </div>
+    </DynamicBackground>
   );
 }
